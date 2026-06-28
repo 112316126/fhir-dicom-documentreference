@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>心臟超音波 DICOM 與 FHIR DocumentReference 整合</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      background: #f3f6fb;
+      color: #1f2937;
+    }
+    header {
+      background: linear-gradient(135deg, #1f4e79, #2563eb);
+      color: white;
+      padding: 32px 20px;
+      text-align: center;
+    }
+    header h1 { margin: 0 0 10px; font-size: 28px; }
+    header p { margin: 0; opacity: .95; }
+    main {
+      max-width: 1050px;
+      margin: 28px auto;
+      padding: 0 18px 40px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      border: 1px solid #e5e7eb;
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 20px;
+      color: #1f4e79;
+    }
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: 700;
+      color: #374151;
+    }
+    input, select, textarea {
+      width: 100%;
+      margin-top: 7px;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 15px;
+      background: #fff;
+    }
+    textarea { min-height: 74px; resize: vertical; }
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    .secondary { background: #0f766e; }
+    .secondary:hover { background: #115e59; }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .file-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #eff6ff;
+      border-left: 5px solid #2563eb;
+      line-height: 1.8;
+    }
+    pre {
+      margin: 0;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      min-height: 460px;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .full { margin-top: 20px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: left;
+    }
+    th { background: #f8fafc; color: #1f4e79; }
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+      pre { min-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>心臟超音波 DICOM 與 FHIR DocumentReference 整合</h1>
+    <p>選取 DICOM 檔案後，自動產生 FHIR DocumentReference metadata JSON</p>
+  </header>
+
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>一、檔案與病人資料</h2>
+        <p class="muted">此頁面模擬 DICOM 檔案上傳後，建立對應的 FHIR DocumentReference。實際系統中，DICOM 檔案會先上傳到檔案儲存庫，再將檔案 URL 寫入 DocumentReference。</p>
+
+        <label for="patientId">病人 ID</label>
+        <input id="patientId" type="text" value="1326" />
+
+        <label for="patientName">病人姓名</label>
+        <input id="patientName" type="text" value="測試病人" />
+
+        <label for="department">檢查科別</label>
+        <select id="department">
+          <option value="心臟科">心臟科</option>
+          <option value="影像醫學科">影像醫學科</option>
+          <option value="內科">內科</option>
+        </select>
+
+        <label for="docType">文件/影像類型</label>
+        <input id="docType" type="text" value="心臟超音波 DICOM 影像" />
+
+        <label for="fileUrl">檔案儲存位置 URL（可手動修改）</label>
+        <input id="fileUrl" type="text" value="https://example.com/dicom/echo-1326.dcm" />
+
+        <label for="description">描述</label>
+        <textarea id="description">心臟超音波 DICOM 檔案，結合 FHIR DocumentReference 作為影像索引與 metadata 管理。</textarea>
+
+        <label for="dicomFile">選取 DICOM 檔案</label>
+        <input id="dicomFile" type="file" accept=".dcm,application/dicom" />
+
+        <div id="fileInfo" class="file-box">尚未選取檔案</div>
+
+        <button onclick="createDocumentReference()">產生 DocumentReference JSON</button>
+        <button class="secondary" onclick="downloadJson()">下載 JSON 檔</button>
+      </section>
+
+      <section class="card">
+        <h2>二、DocumentReference JSON</h2>
+        <pre id="output">請先選取 DICOM 檔案，或直接按下「產生 DocumentReference JSON」。</pre>
+      </section>
+    </div>
+
+    <section class="card full">
+      <h2>三、欄位對應說明</h2>
+      <table>
+        <thead>
+          <tr><th>FHIR 欄位</th><th>用途</th><th>本頁面對應</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>status</td><td>DocumentReference 狀態</td><td>current</td></tr>
+          <tr><td>docStatus</td><td>文件臨床狀態</td><td>final</td></tr>
+          <tr><td>type</td><td>文件或影像類型</td><td>心臟超音波 DICOM 影像</td></tr>
+          <tr><td>subject</td><td>對應病人</td><td>Patient/{病人ID}</td></tr>
+          <tr><td>date</td><td>建立時間</td><td>系統目前時間</td></tr>
+          <tr><td>author</td><td>建立者或檢查單位</td><td>科別</td></tr>
+          <tr><td>content.attachment.contentType</td><td>檔案格式</td><td>application/dicom</td></tr>
+          <tr><td>content.attachment.url</td><td>檔案儲存位置</td><td>檔案 URL</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    let selectedFile = null;
+    let latestJson = null;
+
+    const fileInput = document.getElementById("dicomFile");
+    fileInput.addEventListener("change", function(event) {
+      selectedFile = event.target.files[0] || null;
+      const info = document.getElementById("fileInfo");
+
+      if (!selectedFile) {
+        info.textContent = "尚未選取檔案";
+        return;
+      }
+
+      const safeName = selectedFile.name.replace(/\s+/g, "_");
+      document.getElementById("fileUrl").value = "https://example.com/dicom/" + safeName;
+
+      info.innerHTML =
+        "<strong>檔案名稱：</strong>" + selectedFile.name + "<br>" +
+        "<strong>檔案大小：</strong>" + (selectedFile.size / 1024).toFixed(2) + " KB<br>" +
+        "<strong>檔案類型：</strong>" + (selectedFile.type || "application/dicom");
+    });
+
+    function createDocumentReference() {
+      const patientId = document.getElementById("patientId").value.trim() || "1326";
+      const patientName = document.getElementById("patientName").value.trim() || "測試病人";
+      const department = document.getElementById("department").value;
+      const docType = document.getElementById("docType").value.trim() || "心臟超音波 DICOM 影像";
+      const fileUrl = document.getElementById("fileUrl").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const now = new Date().toISOString();
+      const title = selectedFile ? selectedFile.name : "echo-1326.dcm";
+
+      latestJson = {
+        resourceType: "DocumentReference",
+        status: "current",
+        docStatus: "final",
+        type: { text: docType },
+        category: [ { text: "Cardiology Imaging" } ],
+        subject: {
+          reference: "Patient/" + patientId,
+          display: patientName
+        },
+        date: now,
+        author: [
+          {
+            reference: "Organization/Cardiology",
+            display: department
+          }
+        ],
+        description: description,
+        content: [
+          {
+            attachment: {
+              contentType: "application/dicom",
+              url: fileUrl,
+              title: title,
+              creation: now
+            }
+          }
+        ]
+      };
+
+      document.getElementById("output").textContent = JSON.stringify(latestJson, null, 2);
+    }
+
+    function downloadJson() {
+      if (!latestJson) createDocumentReference();
+      const blob = new Blob([JSON.stringify(latestJson, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "DocumentReference-dicom.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    createDocumentReference();
+  </script>
+</body>
+</html>
