@@ -1,5 +1,6 @@
 # 心臟超音波 DICOM 與 FHIR DocumentReference 整合
 🌐 **Live Demo**
+<img width="1277" height="699" alt="image" src="https://github.com/user-attachments/assets/587e1551-9d69-404a-9f69-c82fc83bc8f2" />
 
 https://112316126.github.io/fhir-dicom-documentreference/
 
